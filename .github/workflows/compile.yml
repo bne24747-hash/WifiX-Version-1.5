@@ -1,6 +1,8 @@
-name: Compile GMpro Deauther Fixed Library
+name: Compile WifiX Deauther
 
-on: [push, workflow_dispatch]
+on: 
+  push:
+  workflow_dispatch: # Supaya bisa klik "Run workflow" manual
 
 jobs:
   build:
@@ -17,30 +19,24 @@ jobs:
           arduino-cli core update-index --additional-urls https://raw.githubusercontent.com/SpacehuhnTech/arduino/main/package_spacehuhn_index.json
           arduino-cli core install deauther:esp8266 --additional-urls https://raw.githubusercontent.com/SpacehuhnTech/arduino/main/package_spacehuhn_index.json
 
-      - name: Install Library from Repo Zip
+      - name: Install Libraries
         run: |
-          # Membuat folder library manual
-          mkdir -p /home/runner/Arduino/libraries
-          
-          # Mengambil library SimpleCLI
+          # Install SimpleCLI langsung dari library manager
           arduino-cli lib install "SimpleCLI"
           
-          # Unzip ArduinoJson versi spesifik yang ada di repo kamu
-          # Pastikan nama file zip di repo kamu benar-benar "ArduinoJson-5.13.5.zip"
-          unzip -o ArduinoJson-5.13.5.zip -d /home/runner/Arduino/libraries/
-          
-          # List library untuk memastikan file ada
-          ls -R /home/runner/Arduino/libraries/
+          # Install ArduinoJson versi 5 (Deauther biasanya butuh v5, bukan v6/v7)
+          # Kita pakai CLI aja supaya lebih pasti jalurnya daripada unzip manual
+          arduino-cli lib install "ArduinoJson"@5.13.5
 
-      - name: Compile GMpro Firmware
+      - name: Compile Firmware
         run: |
-          # Menggunakan FQBN paling stabil untuk SDK Deauther
-          # Menghapus vtables dan mmu untuk menghindari 'invalid option'
+          # PASTIKAN: Nama file .ino di bawah ini harus SAMA dengan yang ada di repo lu.
+          # Kalau di screenshot tadi namanya WifiXv1.5.ino, pakai itu.
           arduino-cli compile --fqbn deauther:esp8266:generic:eesz=4M2M \
-          ./GMpro.ino --output-dir ./build
+          ./WifiXv1.5.ino --output-dir ./build
 
       - name: Upload Binary
         uses: actions/upload-artifact@v4
         with:
-          name: GMpro-Deauther-Binary
+          name: WifiX-Deauther-Bin
           path: ./build/*.bin
