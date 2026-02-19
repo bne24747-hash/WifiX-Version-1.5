@@ -1,4 +1,4 @@
-name: WifiX-GMpro87-Custom-Edition
+name: WifiX-GMpro87-Final-Fix
 
 on: 
   push:
@@ -30,15 +30,15 @@ jobs:
           mkdir -p WifiXv1.5
           find . -maxdepth 1 -not -name 'WifiXv1.5' -not -name '.' -exec cp -r {} WifiXv1.5/ \;
 
-          # 2. BYPASS ACTIVATION (Hapus gembok kodingan)
-          sed -i '133,137d' WifiXv1.5/WifiXv1.5.ino
+          # 2. BYPASS ACTIVATION (Hapus blok gembok dengan aman)
+          # Kita pakai pencarian teks spesifik agar tidak merusak baris lain
+          sed -i '/if(EEPROM.read(400) == 1){/,/}/d' WifiXv1.5/WifiXv1.5.ino
 
           # 3. SETTING WIFI (Vivo1904 / Sangkur87)
           sed -i 's/#define AP_SSID "#WifiX.1.5#"/#define AP_SSID "Vivo1904"/g' WifiXv1.5/A_config.h
           sed -i 's/#define AP_PASSWD "deauther"/#define AP_PASSWD "Sangkur87"/g' WifiXv1.5/A_config.h
 
           # 4. CONFIG OLED 0.66" (SSD1306 64x48)
-          # Mengaktifkan driver SSD1306 I2C dan mematikan SH1106 bawaan NODEMCU
           sed -i '/#elif defined(NODEMCU) || defined(WEMOS_D1_MINI)/,/#elif/ s/#define SH1106_I2C/\/\/#define SH1106_I2C/' WifiXv1.5/A_config.h
           sed -i '/#elif defined(NODEMCU) || defined(WEMOS_D1_MINI)/,/#elif/ s/\/\/#define SSD1306_I2C/#define SSD1306_I2C/' WifiXv1.5/A_config.h
 
@@ -58,5 +58,5 @@ jobs:
       - name: Upload Binary
         uses: actions/upload-artifact@v4
         with:
-          name: WifiX-GMpro87-Final
+          name: WifiX-GMpro87-Final-Unlocked
           path: ./build/*.bin
