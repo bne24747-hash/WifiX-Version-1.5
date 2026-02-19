@@ -1,0 +1,32 @@
+name: Compile Sketch to Bin
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Arduino CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
+          echo "/home/runner/work/${{ github.event.repository.name }}/${{ github.event.repository.name }}/bin" >> $GITHUB_PATH
+
+      - name: Install Board Support
+        run: |
+          arduino-cli core update-index
+          # Ganti baris di bawah sesuai board lu (ESP8266 atau ESP32)
+          arduino-cli core install esp8266:esp8266 
+          
+      - name: Compile Sketch
+        run: |
+          # Sesuaikan nama file .ino lu
+          arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 --output-dir ./build WifiXv1.5.ino
+
+      - name: Upload Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: Compiled-Binaries
+          path: ./build/*.bin
