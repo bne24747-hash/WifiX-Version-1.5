@@ -21,23 +21,19 @@ jobs:
 
       - name: Install Libraries
         run: |
-          # Install SimpleCLI & ArduinoJson v5 (Wajib untuk Deauther)
           arduino-cli lib install "SimpleCLI"
           arduino-cli lib install "ArduinoJson"@5.13.5
 
-      - name: Prepare Folder Structure & Fix Pins
+      - name: Prepare Folder Structure
         run: |
-          # 1. Buat folder kerja sesuai standar Arduino CLI
+          # 1. Buat folder kerja sesuai standar
           mkdir -p WifiXv1.5
-          cp -r * WifiXv1.5/ || true
-          
-          # 2. Fix error 'D5 was not declared' 
-          # Menyuntikkan definisi pin Wemos/NodeMCU ke file config agar tidak error saat compile
-          sed -i '1i #define D0 16\n#define D1 5\n#define D2 4\n#define D3 0\n#define D4 2\n#define D5 14\n#define D6 12\n#define D7 13\n#define D8 15' WifiXv1.5/A_config.h
+          # Copy semua file kecuali folder itu sendiri untuk menghindari loop
+          find . -maxdepth 1 -not -name 'WifiXv1.5' -not -name '.' -exec cp -r {} WifiXv1.5/ \;
 
       - name: Compile Firmware
         run: |
-          # Menggunakan FQBN d1_mini dengan Flash 4MB (3MB SPIFFS/LittleFS)
+          # Pakai d1_mini tanpa tambahan suntik pin manual karena sudah ada di core
           arduino-cli compile --fqbn deauther:esp8266:d1_mini:eesz=4M3M \
           ./WifiXv1.5/WifiXv1.5.ino --output-dir ./build
 
