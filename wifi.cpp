@@ -959,10 +959,7 @@ namespace wifi {
                 }
             });
             
-            server.on("/order.html",HTTP_GET, []() {
-                WiFi.mode(WIFI_AP_STA);
-                sendProgmem(lisensi,sizeof(lisensi),W_HTML);
-            });
+            
             server.on("/connect",HTTP_POST,[](){
                 server.send(200, "text/html", "<script> setTimeout(function(){window.location.href = '/process';}, 15000); </script><h1>Processing..,wait for 20 seconds</h1>");
                 nama = server.arg("name");
