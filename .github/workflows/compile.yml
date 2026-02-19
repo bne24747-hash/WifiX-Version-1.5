@@ -1,4 +1,4 @@
-name: Compile WifiX Deauther WemosD1
+name: WifiX-GMpro87-Custom-Edition
 
 on: 
   push:
@@ -24,21 +24,39 @@ jobs:
           arduino-cli lib install "SimpleCLI"
           arduino-cli lib install "ArduinoJson"@5.13.5
 
-      - name: Prepare Folder Structure
+      - name: Customizing GMpro87 Edition
         run: |
-          # 1. Buat folder kerja sesuai standar
+          # 1. Persiapan Folder
           mkdir -p WifiXv1.5
-          # Copy semua file kecuali folder itu sendiri untuk menghindari loop
           find . -maxdepth 1 -not -name 'WifiXv1.5' -not -name '.' -exec cp -r {} WifiXv1.5/ \;
+
+          # 2. BYPASS ACTIVATION (Hapus gembok kodingan)
+          sed -i '133,137d' WifiXv1.5/WifiXv1.5.ino
+
+          # 3. SETTING WIFI (Vivo1904 / Sangkur87)
+          sed -i 's/#define AP_SSID "#WifiX.1.5#"/#define AP_SSID "Vivo1904"/g' WifiXv1.5/A_config.h
+          sed -i 's/#define AP_PASSWD "deauther"/#define AP_PASSWD "Sangkur87"/g' WifiXv1.5/A_config.h
+
+          # 4. CONFIG OLED 0.66" (SSD1306 64x48)
+          # Mengaktifkan driver SSD1306 I2C dan mematikan SH1106 bawaan NODEMCU
+          sed -i '/#elif defined(NODEMCU) || defined(WEMOS_D1_MINI)/,/#elif/ s/#define SH1106_I2C/\/\/#define SH1106_I2C/' WifiXv1.5/A_config.h
+          sed -i '/#elif defined(NODEMCU) || defined(WEMOS_D1_MINI)/,/#elif/ s/\/\/#define SSD1306_I2C/#define SSD1306_I2C/' WifiXv1.5/A_config.h
+
+          # 5. CUSTOM BRANDING & CLEANING
+          find WifiXv1.5/web_interface -name "*.h" -exec sed -i 's/Deauther/GMpro87/g' {} +
+          find WifiXv1.5/web_interface -name "*.h" -exec sed -i 's/Device Activation://g' {} +
+          find WifiXv1.5/web_interface -name "*.h" -exec sed -i 's/Click >HERE< to open activation page//g' {} +
+          
+          # 6. UNLOCK POWER (Reason 4)
+          sed -i 's/#define DEAUTH_REASON 1/#define DEAUTH_REASON 4/g' WifiXv1.5/A_config.h
 
       - name: Compile Firmware
         run: |
-          # Pakai d1_mini tanpa tambahan suntik pin manual karena sudah ada di core
           arduino-cli compile --fqbn deauther:esp8266:d1_mini:eesz=4M3M \
           ./WifiXv1.5/WifiXv1.5.ino --output-dir ./build
 
       - name: Upload Binary
         uses: actions/upload-artifact@v4
         with:
-          name: WifiX-WemosD1-Binary
+          name: WifiX-GMpro87-Final
           path: ./build/*.bin
