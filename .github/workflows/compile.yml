@@ -2,7 +2,7 @@ name: Compile WifiX Deauther
 
 on: 
   push:
-  workflow_dispatch: # Supaya bisa klik "Run workflow" manual
+  workflow_dispatch:
 
 jobs:
   build:
@@ -21,19 +21,23 @@ jobs:
 
       - name: Install Libraries
         run: |
-          # Install SimpleCLI langsung dari library manager
           arduino-cli lib install "SimpleCLI"
-          
-          # Install ArduinoJson versi 5 (Deauther biasanya butuh v5, bukan v6/v7)
-          # Kita pakai CLI aja supaya lebih pasti jalurnya daripada unzip manual
           arduino-cli lib install "ArduinoJson"@5.13.5
+
+      - name: Prepare Folder Structure
+        run: |
+          # Trik supaya Arduino CLI gak error:
+          # Buat folder bernama 'WifiXv1.5' dan pindahkan semua file ke sana
+          mkdir WifiXv1.5
+          cp -r * WifiXv1.5/ || true
+          # Hapus folder build lama jika ada
+          rm -rf build
 
       - name: Compile Firmware
         run: |
-          # PASTIKAN: Nama file .ino di bawah ini harus SAMA dengan yang ada di repo lu.
-          # Kalau di screenshot tadi namanya WifiXv1.5.ino, pakai itu.
+          # Compile dari dalam folder yang baru dibuat
           arduino-cli compile --fqbn deauther:esp8266:generic:eesz=4M2M \
-          ./WifiXv1.5.ino --output-dir ./build
+          ./WifiXv1.5/WifiXv1.5.ino --output-dir ./build
 
       - name: Upload Binary
         uses: actions/upload-artifact@v4
