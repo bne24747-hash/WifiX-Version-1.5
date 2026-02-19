@@ -24,18 +24,19 @@ jobs:
           arduino-cli lib install "SimpleCLI"
           arduino-cli lib install "ArduinoJson"@5.13.5
 
-      - name: Prepare Folder Structure
+      - name: Prepare Folder Structure & Fix Pins
         run: |
-          # Trik supaya Arduino CLI gak error:
-          # Buat folder bernama 'WifiXv1.5' dan pindahkan semua file ke sana
-          mkdir WifiXv1.5
+          # Buat folder kerja
+          mkdir -p WifiXv1.5
           cp -r * WifiXv1.5/ || true
-          # Hapus folder build lama jika ada
-          rm -rf build
+          
+          # Fix error 'D5 was not declared'
+          # Kita tambahkan definisi pin standar NodeMCU ke A_config.h secara otomatis
+          sed -i '1i #define D0 16\n#define D1 5\n#define D2 4\n#define D3 0\n#define D4 2\n#define D5 14\n#define D6 12\n#define D7 13\n#define D8 15' WifiXv1.5/A_config.h
 
       - name: Compile Firmware
         run: |
-          # Compile dari dalam folder yang baru dibuat
+          # Compile menggunakan core deauther
           arduino-cli compile --fqbn deauther:esp8266:generic:eesz=4M2M \
           ./WifiXv1.5/WifiXv1.5.ino --output-dir ./build
 
