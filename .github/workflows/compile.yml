@@ -1,32 +1,46 @@
-name: Compile Sketch to Bin
+name: Compile GMpro Deauther Fixed Library
 
-on: [push, pull_request]
+on: [push, workflow_dispatch]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Install Arduino CLI
-        run: |
-          curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
-          echo "/home/runner/work/${{ github.event.repository.name }}/${{ github.event.repository.name }}/bin" >> $GITHUB_PATH
+      - name: Setup Arduino CLI
+        uses: arduino/setup-arduino-cli@v1
 
-      - name: Install Board Support
+      - name: Install Spacehuhn Deauther SDK
         run: |
-          arduino-cli core update-index
-          # Ganti baris di bawah sesuai board lu (ESP8266 atau ESP32)
-          arduino-cli core install esp8266:esp8266 
+          arduino-cli core update-index --additional-urls https://raw.githubusercontent.com/SpacehuhnTech/arduino/main/package_spacehuhn_index.json
+          arduino-cli core install deauther:esp8266 --additional-urls https://raw.githubusercontent.com/SpacehuhnTech/arduino/main/package_spacehuhn_index.json
+
+      - name: Install Library from Repo Zip
+        run: |
+          # Membuat folder library manual
+          mkdir -p /home/runner/Arduino/libraries
           
-      - name: Compile Sketch
+          # Mengambil library SimpleCLI
+          arduino-cli lib install "SimpleCLI"
+          
+          # Unzip ArduinoJson versi spesifik yang ada di repo kamu
+          # Pastikan nama file zip di repo kamu benar-benar "ArduinoJson-5.13.5.zip"
+          unzip -o ArduinoJson-5.13.5.zip -d /home/runner/Arduino/libraries/
+          
+          # List library untuk memastikan file ada
+          ls -R /home/runner/Arduino/libraries/
+
+      - name: Compile GMpro Firmware
         run: |
-          # Sesuaikan nama file .ino lu
-          arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 --output-dir ./build WifiXv1.5.ino
+          # Menggunakan FQBN paling stabil untuk SDK Deauther
+          # Menghapus vtables dan mmu untuk menghindari 'invalid option'
+          arduino-cli compile --fqbn deauther:esp8266:generic:eesz=4M2M \
+          ./GMpro.ino --output-dir ./build
 
       - name: Upload Binary
         uses: actions/upload-artifact@v4
         with:
-          name: Compiled-Binaries
+          name: GMpro-Deauther-Binary
           path: ./build/*.bin
