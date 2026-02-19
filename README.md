@@ -14,5 +14,5 @@ main feature
 
 for html file example..,see /data folder
 
-you have a problem about compiling?? join this group for discussion t.me/X32Project
+you have a problem about compiling?? join this group for discussion https://t.me/X32Project
 
