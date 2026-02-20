@@ -1,4 +1,4 @@
-name: WifiX-GMpro87-Full-Rebrand
+name: GMpro87-Final-Unlocked
 
 on: 
   push:
@@ -24,41 +24,29 @@ jobs:
           arduino-cli lib install "SimpleCLI"
           arduino-cli lib install "ArduinoJson"@5.13.5
 
-      - name: Rebranding to GMpro87
+      - name: Ultimate Rebranding GMpro87
         run: |
           mkdir -p WifiXv1.5
           find . -maxdepth 1 -not -name 'WifiXv1.5' -not -name '.' -exec cp -r {} WifiXv1.5/ \;
 
-          # 1. GANTI NAMA VERSI & DEVELOPER (WifiX 1.5 & asp29 -> dev: GMpro87)
-          # Di file kodingan utama
-          sed -i 's/WifiX 1.5/dev: GMpro87/g' WifiXv1.5/WifiXv1.5.ino
-          sed -i 's/asp29/dev: GMpro87/g' WifiXv1.5/WifiXv1.5.ino
-          
-          # Di file konfigurasi
-          sed -i 's/WifiX 1.5/dev: GMpro87/g' WifiXv1.5/A_config.h
-          sed -i 's/asp29/dev: GMpro87/g' WifiXv1.5/A_config.h
-          
-          # Di semua file Web Interface (HTML/Header)
-          find WifiXv1.5/web_interface -name "*.h" -exec sed -i 's/WifiX 1.5/dev: GMpro87/g' {} +
-          find WifiXv1.5/web_interface -name "*.h" -exec sed -i 's/asp29/dev: GMpro87/g' {} +
+          # 1. BYPASS AKTIVASI (Force True)
+          # Mengganti pengecekan EEPROM agar selalu dianggap sudah aktif
+          sed -i 's/if(EEPROM.read(400) == 1)/if(true)/g' WifiXv1.5/WifiXv1.5.ino
+          sed -i 's/return loop();//g' WifiXv1.5/WifiXv1.5.ino
+
+          # 2. FULL REBRAND (WifiX & asp29 -> dev: GMpro87)
+          find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/WifiX 1.5/dev : GMpro87/g' {} +
+          find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/asp29/dev : GMpro87/g' {} +
           find WifiXv1.5/web_interface -name "*.h" -exec sed -i 's/Deauther/GMpro87/g' {} +
 
-          # 2. HAPUS TOTAL BLOK AKTIVASI & LINK DEVELOPER
+          # 3. HAPUS TEKS AKTIVASI & INTRO
           find WifiXv1.5/web_interface -name "*.h" -exec sed -i 's/Device Activation://g' {} +
           find WifiXv1.5/web_interface -name "*.h" -exec sed -i 's/Click >HERE< to open activation page//g' {} +
-          find WifiXv1.5/web_interface -name "*.h" -exec sed -i 's/Contact me on Instagram,Telegram,or facebook//g' {} +
-          find WifiXv1.5/web_interface -name "*.h" -exec sed -i 's/[0-9]\. fill in your name.*//g' {} +
-          find WifiXv1.5/web_interface -name "*.h" -exec sed -i 's/[0-9]\. Notify me.*//g' {} +
-
-          # 3. HILANGKAN INTRO & BYPASS AKTIVASI
           sed -i 's/displayUI.drawIntro/#define NO_INTRO/g' WifiXv1.5/WifiXv1.5.ino
-          sed -i 's/if(EEPROM.read(400) == 1)/if(false)/g' WifiXv1.5/WifiXv1.5.ino
 
-          # 4. SETTING WIFI (Vivo1904 / Sangkur87)
+          # 4. WIFI & OLED CONFIG
           sed -i 's/#define AP_SSID "#WifiX.1.5#"/#define AP_SSID "Vivo1904"/g' WifiXv1.5/A_config.h
           sed -i 's/#define AP_PASSWD "deauther"/#define AP_PASSWD "Sangkur87"/g' WifiXv1.5/A_config.h
-
-          # 5. CONFIG OLED 0.66"
           sed -i '/#elif defined(NODEMCU)/,/#elif/ s/SH1106_I2C/SSD1306_I2C/g' WifiXv1.5/A_config.h
 
       - name: Compile Firmware
@@ -69,5 +57,5 @@ jobs:
       - name: Upload Binary
         uses: actions/upload-artifact@v4
         with:
-          name: WifiX-GMpro87-Branding-Final
+          name: GMpro87-Final-Bin
           path: ./build/*.bin
