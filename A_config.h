@@ -2,7 +2,7 @@
 
 #pragma once
 
-// Fix Macro untuk D3 dan Pin lainnya
+// Fix Macro Pin untuk Wemos D1 Mini agar tidak error di file lain
 #ifndef D3
   #define D3 0
   #define D4 2
@@ -20,21 +20,22 @@
 #define DEBUG_BAUD 115200
 
 // =================================================================================================
-// BOARD SETTINGS (WEMOS D1 MINI)
+// PILIHAN BOARD (WEMOS D1 MINI)
 // =================================================================================================
 #define WEMOS_D1_MINI 
 
-// MATIKAN FORMAT OTOMATIS BIAR GAK KENA ERROR "2 ARGUMENTS"
+// Matikan flag format agar tidak bentrok dengan fungsi EEPROMHelper di .ino
 //#define FORMAT_SPIFFS
 //#define FORMAT_EEPROM
 #define RESET_SETTINGS 
 
 #if defined(WEMOS_D1_MINI)
- // FIX NEOPIXEL ERROR: Pakai angka GPIO langsung
+ // SETTINGAN LED - Menggunakan PIN GPIO15 (D8)
  #define LED_NEOPIXEL
- #define LED_NEOPIXEL_PIN 15 // GPIO15 = D8
  #define LED_NUM 1
+ #define LED_NEOPIXEL_PIN 15 
  #define LED_MODE_BRIGHTNESS 10
+ #define USE_LED true
  
  #define INTRO_STR "WifiX v1.5"
  #define USE_DISPLAY false 
@@ -53,18 +54,18 @@
 #endif
 
 // =================================================================================================
-// CORE DEFINITIONS (WAJIB BIAR SETTINGS.CPP GAK ERROR)
+// DEFINISI CORE (Mencegah error 'not declared' di settings.cpp dan led.cpp)
 // =================================================================================================
 #define DEAUTHER_VERSION "2.6.1"
 #define DEAUTHER_VERSION_MAJOR 2
 #define DEAUTHER_VERSION_MINOR 6
 #define DEAUTHER_VERSION_REVISION 1
 
-// FIX EEPROM: Sesuai log error lo
 #define EEPROM_SIZE 4096
 #define BOOT_COUNTER_ADDR 1
 #define SETTINGS_ADDR 100
 
+// Konstanta Default untuk Settings
 #define ATTACK_ALL_CH false
 #define RANDOM_TX false
 #define ATTACK_TIMEOUT 0
@@ -85,13 +86,8 @@
 #define WEB_URL "deauth.me"
 #define CLI_ENABLED true
 #define CLI_ECHO true
-#define USE_LED true
 #define LED_MODE_OFF 0, 0, 0
 #define LED_MODE_SCAN 0, 0, 255
 #define LED_MODE_ATTACK 255, 0, 0
 #define LED_MODE_IDLE 0, 255, 0
 #define DISPLAY_TIMEOUT 600
-
-// Redefine format macro untuk "menipu" compiler agar tidak error di .ino
-// Ini akan memaksa fungsi format selalu menerima 2 argumen secara internal
-#define format(x) format(0, x)
