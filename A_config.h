@@ -9,11 +9,11 @@
 #define DEBUG_BAUD 115200
 
 // =================================================================================================
-// PILIHAN BOARD (KHUSUS WEMOS D1 MINI)
+// PILIHAN BOARD (FIXED FOR WEMOS D1 MINI)
 // =================================================================================================
 #define WEMOS_D1_MINI 
 
-// RESET SETTINGS (PENTING: Aktifkan ini untuk flash pertama agar memory bersih)
+// RESET SETTINGS (Wajib aktif di flash pertama biar memori bersih)
 #define RESET_SETTINGS 
 #define FORMAT_SPIFFS
 #define FORMAT_EEPROM
@@ -26,7 +26,13 @@
  #define LED_NEOPIXEL_PIN D8
  #define LED_MODE_BRIGHTNESS 5
  #define INTRO_STR "WifiX v1.5"
+ 
+ // --- FIX VARIABEL ERROR DISINI ---
  #define USE_DISPLAY false 
+ #define FLIP_DIPLAY true   // Ini yang tadi bikin error
+ #define DISPLAY_TEXT "WifiX Monster" // Ini juga yang tadi bikin error
+ // ---------------------------------
+
  #define SH1106_I2C
  #define I2C_ADDR 0x3C
  #define I2C_SDA 4
@@ -38,14 +44,14 @@
 #endif
 
 // =================================================================================================
-// PENGATURAN WEB INTERFACE (MENGGUNAKAN WEBFILES.H YANG SUDAH ADA)
+// PENGATURAN WEB INTERFACE (MENGGUNAKAN WEBFILES.H)
 // =================================================================================================
 
 #ifndef WEB_ENABLED
   #define WEB_ENABLED true
 #endif
 
-// KARENA WEBFILES.H SUDAH ADA, KITA SET FALSE AGAR DIAMBIL DARI PROGMEM (INTERNAL)
+// Karena di folder lo ada webfiles.h, kita pakai mode internal (false)
 #ifndef WEB_USE_SPIFFS
   #define WEB_USE_SPIFFS false 
 #endif
