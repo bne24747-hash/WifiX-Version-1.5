@@ -9,22 +9,21 @@
 #define DEBUG_BAUD 115200
 
 // =================================================================================================
-// PILIHAN BOARD
+// PILIHAN BOARD (WEMOS D1 MINI)
 // =================================================================================================
 #define WEMOS_D1_MINI 
 
-// RESET SETTINGS (Aktifkan untuk pembersihan memori pertama kali)
-#define RESET_SETTINGS 
-#define FORMAT_SPIFFS
-#define FORMAT_EEPROM
+// PENTING: Matikan FORMAT_EEPROM dulu jika fungsi format di .ino lo bermasalah dengan 1 argumen
+// #define RESET_SETTINGS 
+// #define FORMAT_SPIFFS
 
 // ========== CONFIGS KHUSUS WEMOS D1 MINI ========== //
 
 #if defined(WEMOS_D1_MINI)
  #define LED_NEOPIXEL_GRB
  #define LED_NUM 1
- #define LED_NEOPIXEL_PIN D8
- #define LED_MODE_BRIGHTNESS 5
+ #define LED_NEOPIXEL_PIN 15 // Gunakan angka 15 (GPIO15) daripada D8 untuk menghindari error macro
+ #define LED_MODE_BRIGHTNESS 10
  #define INTRO_STR "WifiX v1.5"
  #define USE_DISPLAY false 
  #define FLIP_DIPLAY true
@@ -33,11 +32,11 @@
  #define I2C_ADDR 0x3C
  #define I2C_SDA 4
  #define I2C_SCL 5
- #define BUTTON_UP D5   
- #define BUTTON_DOWN D6 
- #define BUTTON_A D4     
- #define BUTTON_B D3     
- #define RESET_BUTTON 255 // Set 255 jika tidak ada tombol reset fisik khusus
+ #define BUTTON_UP 14   // GPIO14
+ #define BUTTON_DOWN 12 // GPIO12
+ #define BUTTON_A 13    // GPIO13
+ #define BUTTON_B 0     // GPIO0
+ #define RESET_BUTTON 255
 #endif
 
 // =================================================================================================
@@ -49,7 +48,8 @@
 #define DEAUTHER_VERSION_MINOR 6
 #define DEAUTHER_VERSION_REVISION 1
 
-#define EEPROM_SIZE 4095
+// FIX EEPROM SIZE
+#define EEPROM_SIZE 4096
 #define BOOT_COUNTER_ADDR 1
 #define SETTINGS_ADDR 100
 
@@ -75,7 +75,7 @@
 // ===== WEB INTERFACE SETTINGS =====
 #define WEB_ENABLED true
 #define WEB_CAPTIVE_PORTAL false
-#define WEB_USE_SPIFFS false  // Menggunakan webfiles.h internal
+#define WEB_USE_SPIFFS false  
 #define DEFAULT_LANG "en"
 #define WEB_URL "deauth.me"
 
@@ -83,6 +83,7 @@
 #define CLI_ENABLED true
 #define CLI_ECHO true
 #define USE_LED true
+#define LED_NEOPIXEL // Tambahkan ini secara eksplisit
 #define LED_MODE_OFF 0, 0, 0
 #define LED_MODE_SCAN 0, 0, 255
 #define LED_MODE_ATTACK 255, 0, 0
