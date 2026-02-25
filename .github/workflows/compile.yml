@@ -25,25 +25,22 @@ jobs:
           arduino-cli lib install "ArduinoJson"@5.13.5
           arduino-cli lib install "Adafruit NeoPixel"
 
-      - name: Ultimate Rebranding & Root Fix
+      - name: Ultimate Rebranding & Surgical Fix
         run: |
-          # Bersihkan folder sisa biar gak pusing
-          rm -rf WifiXv1.5/ 
-
-          # --- ROOT LIBRARY FIX ---
-          # Copy file library ke root folder tempat WifiXv1.5.ino berada
+          # 1. FIX LIBRARY PATH (Surgical Copy)
+          # Kita copy file header & cpp NeoPixel ke folder utama biar led.cpp gak error 'strip'
           cp /home/runner/Arduino/libraries/Adafruit_NeoPixel/*.h ./
           cp /home/runner/Arduino/libraries/Adafruit_NeoPixel/*.cpp ./
           
-          # Paksa led.cpp pake file lokal agar variabel 'strip' terbaca
+          # Paksa led.cpp buat pake library lokal
           sed -i 's/#include <Adafruit_NeoPixel.h>/#include "Adafruit_NeoPixel.h"/g' led.cpp
-          # ------------------------
 
-          # 1. BYPASS AKTIVASI (Force True)
+          # 2. BYPASS AKTIVASI (Force True)
+          # Langsung hajar file WifiXv1.5.ino
           sed -i 's/if(EEPROM.read(400) == 1)/if(true)/g' WifiXv1.5.ino
           sed -i 's/return loop();//g' WifiXv1.5.ino
 
-          # 2. FULL REBRAND (WifiX & asp29 -> dev: GMpro87)
+          # 3. FULL REBRAND
           find . -maxdepth 1 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/WifiX 1.5/dev : GMpro87/g' {} +
           find . -maxdepth 1 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/asp29/dev : GMpro87/g' {} +
           
@@ -53,18 +50,18 @@ jobs:
             find web_interface -name "*.h" -exec sed -i 's/Click >HERE< to open activation page//g' {} +
           fi
 
-          # 3. HAPUS INTRO
+          # 4. CONFIG ADJUSTMENT
           sed -i 's/displayUI.drawIntro/#define NO_INTRO/g' WifiXv1.5.ino
-
-          # 4. WIFI & OLED CONFIG
           sed -i 's/#define AP_SSID "#WifiX.1.5#"/#define AP_SSID "Vivo1904"/g' A_config.h
           sed -i 's/#define AP_PASSWD "deauther"/#define AP_PASSWD "Sangkur87"/g' A_config.h
           sed -i '/#elif defined(NODEMCU)/,/#elif/ s/SH1106_I2C/SSD1306_I2C/g' A_config.h
 
       - name: Compile Firmware
         run: |
-          # Langsung hajar file .ino di root
+          # Kunci ke file yang bener di root: WifiXv1.5.ino
+          # Pake flag --libraries buat mastiin path runner bener
           arduino-cli compile --fqbn deauther:esp8266:d1_mini:eesz=4M3M \
+          --libraries /home/runner/Arduino/libraries \
           ./WifiXv1.5.ino --output-dir ./build
 
       - name: Upload Binary
