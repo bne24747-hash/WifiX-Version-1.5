@@ -1,4 +1,4 @@
-name: GMpro87-Final-Boss-Destroyer
+name: GMpro87-Final-Mega-Fix
 
 on: 
   push:
@@ -14,54 +14,43 @@ jobs:
       - name: Setup Arduino CLI
         uses: arduino/setup-arduino-cli@v1
 
-      - name: Install All Required Libraries
+      - name: Install Base Cores
         run: |
           arduino-cli core update-index --additional-urls https://raw.githubusercontent.com/SpacehuhnTech/arduino/main/package_spacehuhn_index.json
           arduino-cli core install deauther:esp8266 --additional-urls https://raw.githubusercontent.com/SpacehuhnTech/arduino/main/package_spacehuhn_index.json
-          arduino-cli lib install "SimpleCLI"
-          arduino-cli lib install "ArduinoJson"@5.13.5
-          arduino-cli lib install "Adafruit NeoPixel"
-          # TAMBAHAN: Library buat OLED biar gak error SH1106Wire.h
-          arduino-cli lib install "ESP8266 and ESP32 OLED driver for SSD1306 displays"
 
-      - name: The Absolute Nuclear Fix
+      - name: The Surgical Reconstruction
         run: |
-          # 1. Rapikan Folder Utama
+          # 1. Rapikan struktur folder
           mkdir -p WifiXv1.5
           cp -r ./* WifiXv1.5/ 2>/dev/null || true
           
-          # 2. SIKAT SEMUA FOLDER SRC (Sumber konflik path)
-          rm -rf WifiXv1.5/src
+          # 2. FIX PATH BRUTAL (BALIKIN KE LOKAL)
+          # Kita paksa semua file nyari library di folder src internal lo sendiri
+          # Ini buat fix error SimpleButton.h dan SH1106Wire.h
+          find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.cpp" -o -name "*.h" \) -exec sed -i 's|<ArduinoJson.h>|"src/ArduinoJson-v5.13.5/ArduinoJson.h"|g' {} +
+          find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.cpp" -o -name "*.h" \) -exec sed -i 's|<Adafruit_NeoPixel.h>|"src/Adafruit_NeoPixel-1.7.0/Adafruit_NeoPixel.h"|g' {} +
+          find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.cpp" -o -name "*.h" \) -exec sed -i 's|<SH1106Wire.h>|"src/esp8266-oled-ssd1306-4.1.0/SH1106Wire.h"|g' {} +
+          find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.cpp" -o -name "*.h" \) -exec sed -i 's|"SimpleButton.h"|"src/SimpleButton/SimpleButton.h"|g' {} +
 
-          # 3. PEMBERSIHAN PATH BRUTAL (Regex fix)
-          # Hapus semua string "src/folder-apa-aja/" dari file include
-          # Biar #include "src/anu/anu.h" jadi #include "anu.h" otomatis
-          find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.cpp" -o -name "*.h" \) -exec sed -i -E 's|src/[^/]+/||g' {} +
+          # 3. FIX "UNDEFINED REFERENCE TO STRIP"
+          # Masukin extern ke led.h tapi pake path internal
+          sed -i '1i #include "src/Adafruit_NeoPixel-1.7.0/Adafruit_NeoPixel.h"' WifiXv1.5/led.h
+          sed -i '/Adafruit_NeoPixel.h/a extern Adafruit_NeoPixel strip;' WifiXv1.5/led.h
           
-          # Paksa ganti tanda kutip jadi angle brackets buat library global
-          find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.cpp" -o -name "*.h" \) -exec sed -i 's|"ArduinoJson.h"|<ArduinoJson.h>|g' {} +
-          find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.cpp" -o -name "*.h" \) -exec sed -i 's|"Adafruit_NeoPixel.h"|<Adafruit_NeoPixel.h>|g' {} +
-          find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.cpp" -o -name "*.h" \) -exec sed -i 's|"SH1106Wire.h"|<SH1106Wire.h>|g' {} +
-
-          # 4. FIX LED DECLARATION
-          # Pastikan led.h punya header yang bener di paling atas
-          sed -i '1i #include <Adafruit_NeoPixel.h>' WifiXv1.5/led.h
-          # Tambahin extern kalau belum ada
-          if ! grep -q "extern Adafruit_NeoPixel strip;" WifiXv1.5/led.h; then
-            sed -i '/#include <Adafruit_NeoPixel.h>/a extern Adafruit_NeoPixel strip;' WifiXv1.5/led.h
-          fi
-
-          # 5. UNLOCK & REBRAND
+          # 4. UNLOCK & REBRAND
           sed -i 's/if(EEPROM.read(400) == 1)/if(true)/g' WifiXv1.5/WifiXv1.5.ino
           find WifiXv1.5 -maxdepth 1 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/WifiX 1.5/dev : GMpro87/g' {} +
 
       - name: Compile Firmware
         run: |
+          # Kita tambahin include path ke folder src biar compiler bisa nemu SimpleButton dkk
           arduino-cli compile --fqbn deauther:esp8266:d1_mini:eesz=4M3M \
+          --build-property "build.extra_flags=-I./WifiXv1.5/src/SimpleButton -I./WifiXv1.5/src/ArduinoJson-v5.13.5 -I./WifiXv1.5/src/Adafruit_NeoPixel-1.7.0 -I./WifiXv1.5/src/esp8266-oled-ssd1306-4.1.0" \
           ./WifiXv1.5 --output-dir ./build
 
       - name: Upload Binary
         uses: actions/upload-artifact@v4
         with:
-          name: GMpro87-Fixed-Bin
+          name: GMpro87-Final-Fixed
           path: ./build/*.bin
