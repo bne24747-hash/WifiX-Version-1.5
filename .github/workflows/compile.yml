@@ -25,50 +25,48 @@ jobs:
           arduino-cli lib install "ArduinoJson"@5.13.5
           arduino-cli lib install "Adafruit NeoPixel"
 
-      - name: Ultimate Rebranding & Library Fix
+      - name: Ultimate Rebranding & Folder Fix
         run: |
-          # 1. IDENTIFIKASI FOLDER PROJECT
-          # Kita gunakan folder yang sudah ada di repo lo
-          TARGET_DIR="."
-          
-          # 2. FORCE COPY LIBRARY KE ROOT (Tempat led.cpp berada)
-          # Kita sebar filenya ke root dan folder src biar compiler gak ada alasan 'not declared'
-          cp /home/runner/Arduino/libraries/Adafruit_NeoPixel/*.h ./
-          cp /home/runner/Arduino/libraries/Adafruit_NeoPixel/*.cpp ./
-          mkdir -p src
-          cp /home/runner/Arduino/libraries/Adafruit_NeoPixel/*.h src/
-          cp /home/runner/Arduino/libraries/Adafruit_NeoPixel/*.cpp src/
+          # 1. BUAT STRUKTUR ARDUINO YANG VALID
+          # Kita buat folder 'WifiXv1.5' dan pindahin semua file ke sana.
+          # Ini obat buat error "Can't open sketch: main file missing".
+          mkdir -p WifiXv1.5
+          cp *.ino WifiXv1.5/ 2>/dev/null || true
+          cp *.cpp WifiXv1.5/ 2>/dev/null || true
+          cp *.h WifiXv1.5/ 2>/dev/null || true
+          cp -r src WifiXv1.5/ 2>/dev/null || true
+          cp -r data WifiXv1.5/ 2>/dev/null || true
+          cp -r web_interface WifiXv1.5/ 2>/dev/null || true
 
-          # 3. FIX INCLUDE PADA led.cpp
-          # Paksa led.cpp menggunakan include lokal
-          if [ -f "led.cpp" ]; then
-            sed -i 's/#include <Adafruit_NeoPixel.h>/#include "Adafruit_NeoPixel.h"/g' led.cpp
+          # 2. SUNTIK LIBRARY NEOPIXEL KE DALAM FOLDER
+          # Biar led.cpp gak teriak 'strip' was not declared lagi.
+          cp /home/runner/Arduino/libraries/Adafruit_NeoPixel/*.h WifiXv1.5/
+          cp /home/runner/Arduino/libraries/Adafruit_NeoPixel/*.cpp WifiXv1.5/
+          
+          # Ubah include jadi lokal (tanda kutip)
+          if [ -f "WifiXv1.5/led.cpp" ]; then
+            sed -i 's/#include <Adafruit_NeoPixel.h>/#include "Adafruit_NeoPixel.h"/g' WifiXv1.5/led.cpp
           fi
 
-          # 4. BYPASS AKTIVASI & REBRANDING
-          sed -i 's/if(EEPROM.read(400) == 1)/if(true)/g' WifiXv1.5.ino
-          sed -i 's/return loop();//g' WifiXv1.5.ino
+          # 3. BYPASS & REBRANDING
+          sed -i 's/if(EEPROM.read(400) == 1)/if(true)/g' WifiXv1.5/WifiXv1.5.ino
+          sed -i 's/return loop();//g' WifiXv1.5/WifiXv1.5.ino
           
-          find . -maxdepth 1 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/WifiX 1.5/dev : GMpro87/g' {} +
-          find . -maxdepth 1 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/asp29/dev : GMpro87/g' {} +
-
-          # 5. CONFIGURATION
-          sed -i 's/displayUI.drawIntro/#define NO_INTRO/g' WifiXv1.5.ino
-          if [ -f "A_config.h" ]; then
-            sed -i 's/#define AP_SSID "#WifiX.1.5#"/#define AP_SSID "Vivo1904"/g' A_config.h
-            sed -i 's/#define AP_PASSWD "deauther"/#define AP_PASSWD "Sangkur87"/g' A_config.h
-            sed -i '/#elif defined(NODEMCU)/,/#elif/ s/SH1106_I2C/SSD1306_I2C/g' A_config.h
+          find WifiXv1.5 -maxdepth 1 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/WifiX 1.5/dev : GMpro87/g' {} +
+          find WifiXv1.5 -maxdepth 1 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/asp29/dev : GMpro87/g' {} +
+          
+          # 4. CONFIG OLED & WIFI
+          if [ -f "WifiXv1.5/A_config.h" ]; then
+            sed -i 's/#define AP_SSID "#WifiX.1.5#"/#define AP_SSID "Vivo1904"/g' WifiXv1.5/A_config.h
+            sed -i 's/#define AP_PASSWD "deauther"/#define AP_PASSWD "Sangkur87"/g' WifiXv1.5/A_config.h
+            sed -i '/#elif defined(NODEMCU)/,/#elif/ s/SH1106_I2C/SSD1306_I2C/g' WifiXv1.5/A_config.h
           fi
 
       - name: Compile Firmware
         run: |
-          # Karena file .ino ada di root, kita buat folder sementara agar Arduino CLI mau compile
-          mkdir -p WifiX_Build
-          cp -r ./* WifiX_Build/ 2>/dev/null || true
-          
+          # Sekarang kita compile FOLDERNYA. Ini standar Arduino CLI.
           arduino-cli compile --fqbn deauther:esp8266:d1_mini:eesz=4M3M \
-          --libraries /home/runner/Arduino/libraries \
-          ./WifiX_Build/WifiXv1.5.ino --output-dir ./build
+          ./WifiXv1.5 --output-dir ./build
 
       - name: Upload Binary
         uses: actions/upload-artifact@v4
