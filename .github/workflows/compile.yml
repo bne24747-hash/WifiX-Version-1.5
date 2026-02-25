@@ -25,46 +25,42 @@ jobs:
           arduino-cli lib install "ArduinoJson"@5.13.5
           arduino-cli lib install "Adafruit NeoPixel"
 
-      - name: Ultimate Rebranding & Surgical Library Fix
+      - name: Ultimate Rebranding & Root Fix
         run: |
-          mkdir -p WifiXv1.5
-          # Copy source code ke folder project
-          find . -maxdepth 1 -not -name 'WifiXv1.5' -not -name '.' -exec cp -r {} WifiXv1.5/ \;
-
-          # --- SURGICAL FIX LIBRARY (PENTING!) ---
-          # Kita cuma copy file HEADER dan CPP, buang folder examples yang bikin error
-          mkdir -p WifiXv1.5/src
-          cp /home/runner/Arduino/libraries/Adafruit_NeoPixel/*.h WifiXv1.5/src/
-          cp /home/runner/Arduino/libraries/Adafruit_NeoPixel/*.cpp WifiXv1.5/src/
+          # --- ROOT LIBRARY FIX ---
+          # Kita copy file library LANGSUNG ke folder utama (root) biar gampang dicari compiler
+          cp /home/runner/Arduino/libraries/Adafruit_NeoPixel/*.h ./
+          cp /home/runner/Arduino/libraries/Adafruit_NeoPixel/*.cpp ./
           
-          # Paksa led.cpp buat pake library lokal di folder src
-          sed -i 's/#include <Adafruit_NeoPixel.h>/#include "src\/Adafruit_NeoPixel.h"/g' WifiXv1.5/led.cpp
-          # ---------------------------------------
+          # Ubah include agar mencari di folder yang sama (local)
+          sed -i 's/#include <Adafruit_NeoPixel.h>/#include "Adafruit_NeoPixel.h"/g' led.cpp
+          # ------------------------
 
           # 1. BYPASS AKTIVASI (Force True)
-          sed -i 's/if(EEPROM.read(400) == 1)/if(true)/g' WifiXv1.5/WifiXv1.5.ino
-          sed -i 's/return loop();//g' WifiXv1.5/WifiXv1.5.ino
+          sed -i 's/if(EEPROM.read(400) == 1)/if(true)/g' WifiXv1.5.ino
+          sed -i 's/return loop();//g' WifiXv1.5.ino
 
           # 2. FULL REBRAND (WifiX & asp29 -> dev: GMpro87)
-          find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/WifiX 1.5/dev : GMpro87/g' {} +
-          find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/asp29/dev : GMpro87/g' {} +
-          find WifiXv1.5/web_interface -name "*.h" -exec sed -i 's/Deauther/GMpro87/g' {} +
+          find . -maxdepth 1 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/WifiX 1.5/dev : GMpro87/g' {} +
+          find . -maxdepth 1 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/asp29/dev : GMpro87/g' {} +
+          find web_interface -name "*.h" -exec sed -i 's/Deauther/GMpro87/g' {} +
 
           # 3. HAPUS TEKS AKTIVASI & INTRO
-          find WifiXv1.5/web_interface -name "*.h" -exec sed -i 's/Device Activation://g' {} +
-          find WifiXv1.5/web_interface -name "*.h" -exec sed -i 's/Click >HERE< to open activation page//g' {} +
-          sed -i 's/displayUI.drawIntro/#define NO_INTRO/g' WifiXv1.5/WifiXv1.5.ino
+          find web_interface -name "*.h" -exec sed -i 's/Device Activation://g' {} +
+          find web_interface -name "*.h" -exec sed -i 's/Click >HERE< to open activation page//g' {} +
+          sed -i 's/displayUI.drawIntro/#define NO_INTRO/g' WifiXv1.5.ino
 
           # 4. WIFI & OLED CONFIG
-          sed -i 's/#define AP_SSID "#WifiX.1.5#"/#define AP_SSID "Vivo1904"/g' WifiXv1.5/A_config.h
-          sed -i 's/#define AP_PASSWD "deauther"/#define AP_PASSWD "Sangkur87"/g' WifiXv1.5/A_config.h
-          sed -i '/#elif defined(NODEMCU)/,/#elif/ s/SH1106_I2C/SSD1306_I2C/g' WifiXv1.5/A_config.h
+          sed -i 's/#define AP_SSID "#WifiX.1.5#"/#define AP_SSID "Vivo1904"/g' A_config.h
+          sed -i 's/#define AP_PASSWD "deauther"/#define AP_PASSWD "Sangkur87"/g' A_config.h
+          # Pastikan OLED sesuai setup lo
+          sed -i '/#elif defined(NODEMCU)/,/#elif/ s/SH1106_I2C/SSD1306_I2C/g' A_config.h
 
       - name: Compile Firmware
         run: |
-          # Compile menggunakan folder yang sudah bersih dari folder examples beracun
+          # Kita compile langsung di root folder, nggak pake folder bayangan lagi
           arduino-cli compile --fqbn deauther:esp8266:d1_mini:eesz=4M3M \
-          ./WifiXv1.5/WifiXv1.5.ino --output-dir ./build
+          ./WifiXv1.5.ino --output-dir ./build
 
       - name: Upload Binary
         uses: actions/upload-artifact@v4
