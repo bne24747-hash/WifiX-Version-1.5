@@ -21,15 +21,25 @@ jobs:
 
       - name: Install Libraries
         run: |
-          # Pakai --user biar library masuk ke folder yang gampang dicari compiler
           arduino-cli lib install "SimpleCLI"
           arduino-cli lib install "ArduinoJson"@5.13.5
           arduino-cli lib install "Adafruit NeoPixel"
 
-      - name: Ultimate Rebranding GMpro87
+      - name: Ultimate Rebranding & Library Force-Fix
         run: |
           mkdir -p WifiXv1.5
+          # Copy source code
           find . -maxdepth 1 -not -name 'WifiXv1.5' -not -name '.' -exec cp -r {} WifiXv1.5/ \;
+
+          # --- FORCE FIX LIBRARY (PENTING!) ---
+          # Kita copy manual file library dari folder Arduino ke folder project kita
+          # Ini buat nge-fix error 'strip' was not declared
+          mkdir -p WifiXv1.5/src
+          cp -r /home/runner/Arduino/libraries/Adafruit_NeoPixel/* WifiXv1.5/src/
+          
+          # Paksa led.cpp buat pake library yang udah kita copy manual
+          sed -i 's/#include <Adafruit_NeoPixel.h>/#include "src\/Adafruit_NeoPixel.h"/g' WifiXv1.5/led.cpp
+          # ------------------------------------
 
           # 1. BYPASS AKTIVASI (Force True)
           sed -i 's/if(EEPROM.read(400) == 1)/if(true)/g' WifiXv1.5/WifiXv1.5.ino
@@ -52,9 +62,8 @@ jobs:
 
       - name: Compile Firmware
         run: |
-          # Kita tambahkan flag --libraries secara eksplisit ke folder runner github
+          # Compile pake folder yang udah di-rebrand dan di-fix library-nya
           arduino-cli compile --fqbn deauther:esp8266:d1_mini:eesz=4M3M \
-          --libraries /home/runner/Arduino/libraries \
           ./WifiXv1.5/WifiXv1.5.ino --output-dir ./build
 
       - name: Upload Binary
