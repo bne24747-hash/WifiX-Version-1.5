@@ -16,11 +16,9 @@
 
 // Reset settings wajib aktif buat flash pertama biar config lama ilang
 #define RESET_SETTINGS 
-// Jangan aktifkan FORMAT_EEPROM karena fungsi format di .ino lo minta 2 argumen
-// #define FORMAT_EEPROM 
 
 #if defined(WEMOS_D1_MINI)
- // Pakai GPIO asli (15 = D8) biar nggak tabrakan macro pin board
+ // Pakai GPIO asli (15 = D8)
  #define LED_NEOPIXEL
  #define LED_NUM 1
  #define LED_NEOPIXEL_PIN 15 
@@ -37,7 +35,7 @@
  #define I2C_SDA 4
  #define I2C_SCL 5
  
- // Pakai GPIO asli untuk tombol
+ // GPIO asli untuk tombol
  #define BUTTON_UP 14   
  #define BUTTON_DOWN 12 
  #define BUTTON_A 13    
@@ -46,7 +44,7 @@
 #endif
 
 // =================================================================================================
-// CORE DEFINITIONS (Agar file lain nggak 'Not Declared')
+// CORE DEFINITIONS
 // =================================================================================================
 #define DEAUTHER_VERSION "2.6.1"
 #define DEAUTHER_VERSION_MAJOR 2
@@ -71,8 +69,9 @@
 #define AP_PASSWD "deauther"
 #define AP_HIDDEN false
 
-// FIX FORMAT IP ADDRESS
-#define AP_IP_ADDR {192, 168, 4, 1}
+// FIX FORMAT IP ADDRESS (PENTING!)
+// Kita gunakan format list sederhana agar diterima oleh constructor IPAddress di wifi.cpp
+#define AP_IP_ADDR 192, 168, 4, 1
 #define WEB_IP_ADDR 192, 168, 4, 1
 
 #define WEB_ENABLED true
