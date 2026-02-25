@@ -69,10 +69,9 @@
 #define AP_PASSWD "deauther"
 #define AP_HIDDEN false
 
-// FIX FORMAT IP ADDRESS (PENTING!)
-// Kita gunakan format list sederhana agar diterima oleh constructor IPAddress di wifi.cpp
-#define AP_IP_ADDR 192, 168, 4, 1
-#define WEB_IP_ADDR 192, 168, 4, 1
+// FIX FORMAT IP ADDRESS: Gunakan format array kurung kurawal
+#define AP_IP_ADDR {192, 168, 4, 1}
+#define WEB_IP_ADDR {192, 168, 4, 1}
 
 #define WEB_ENABLED true
 #define WEB_CAPTIVE_PORTAL false
