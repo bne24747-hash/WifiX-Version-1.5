@@ -1,4 +1,4 @@
-name: GMpro87-The-Survivor
+name: GMpro87-Victory-Lap
 
 on: 
   push:
@@ -14,38 +14,40 @@ jobs:
       - name: Setup Arduino CLI
         uses: arduino/setup-arduino-cli@v1
 
-      - name: Install Official Core & Libs
+      - name: Install Pure Official Libs
         run: |
           arduino-cli core update-index --additional-urls https://raw.githubusercontent.com/SpacehuhnTech/arduino/main/package_spacehuhn_index.json
           arduino-cli core install deauther:esp8266 --additional-urls https://raw.githubusercontent.com/SpacehuhnTech/arduino/main/package_spacehuhn_index.json
-          # Gunakan library resmi biar gak error "Architecture not supported"
-          arduino-cli lib install "Adafruit NeoPixel"
+          # Install versi yang PASTI support ESP8266
+          arduino-cli lib install "Adafruit NeoPixel"@1.10.0
           arduino-cli lib install "ArduinoJson"@5.13.5
           arduino-cli lib install "ESP8266 and ESP32 OLED driver for SSD1306 displays"
 
-      - name: Manual Project Restructuring
+      - name: The Cleanest Reconstruction
         run: |
-          # 1. Buat folder project standar Arduino
+          # 1. Buat folder project baru yang bersih
           mkdir -p WifiXv1.5
           
-          # 2. Copy semua file utama (.ino, .cpp, .h) ke folder tersebut
+          # 2. AMANKAN HANYA SIMPLEBUTTON (Karena ini kustom & gak ada di internet)
+          mkdir -p WifiXv1.5/src/SimpleButton
+          cp -r src/SimpleButton/* WifiXv1.5/src/SimpleButton/ 2>/dev/null || true
+
+          # 3. COPY FILE UTAMA (INO, CPP, H)
           cp *.ino WifiXv1.5/ 2>/dev/null || true
           cp *.cpp WifiXv1.5/ 2>/dev/null || true
           cp *.h WifiXv1.5/ 2>/dev/null || true
+
+          # 4. FIX INCLUDE (Hapus semua referensi folder src/ kuno)
+          # Kita paksa semua file pake library global <...>
+          find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.cpp" -o -name "*.h" \) -exec sed -i 's|#include "src/ArduinoJson-v5.13.5/ArduinoJson.h"|#include <ArduinoJson.h>|g' {} +
+          find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.cpp" -o -name "*.h" \) -exec sed -i 's|#include "src/Adafruit_NeoPixel-1.7.0/Adafruit_NeoPixel.h"|#include <Adafruit_NeoPixel.h>|g' {} +
+          find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.cpp" -o -name "*.h" \) -exec sed -i 's|#include "src/esp8266-oled-ssd1306-4.1.0/SH1106Wire.h"|#include <SH1106Wire.h>|g' {} +
           
-          # 3. AMANKAN SIMPLEBUTTON (Wajib ada karena kustom)
-          mkdir -p WifiXv1.5/src
-          cp -r src/SimpleButton WifiXv1.5/src/ 2>/dev/null || true
-
-          # 4. CLEANING HEADER (Hapus prefix src/ yang bikin error)
-          # Kita benerin manual include-nya tanpa merusak karakter '>'
-          find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.cpp" -o -name "*.h" \) -exec sed -i 's|"src/ArduinoJson-v5.13.5/ArduinoJson.h"|<ArduinoJson.h>|g' {} +
-          find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.cpp" -o -name "*.h" \) -exec sed -i 's|"src/Adafruit_NeoPixel-1.7.0/Adafruit_NeoPixel.h"|<Adafruit_NeoPixel.h>|g' {} +
-          find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.cpp" -o -name "*.h" \) -exec sed -i 's|"src/esp8266-oled-ssd1306-4.1.0/SH1106Wire.h"|<SH1106Wire.h>|g' {} +
-          find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.cpp" -o -name "*.h" \) -exec sed -i 's|"SimpleButton.h"|"src/SimpleButton/SimpleButton.h"|g' {} +
-
-          # 5. FIX "UNDEFINED REFERENCE TO STRIP" & ARCHITECTURE
-          # Suntik include dan extern ke led.h agar sinkron
+          # 5. FIX LED.H & LED.CPP (Suntik extern strip)
+          # Bersihkan file dari include sampah dulu
+          sed -i '/Adafruit_NeoPixel.h/d' WifiXv1.5/led.h
+          sed -i '/extern Adafruit_NeoPixel strip;/d' WifiXv1.5/led.h
+          # Masukkan yang baru & bersih
           sed -i '1i #include <Adafruit_NeoPixel.h>' WifiXv1.5/led.h
           sed -i '/<Adafruit_NeoPixel.h>/a extern Adafruit_NeoPixel strip;' WifiXv1.5/led.h
 
@@ -53,9 +55,9 @@ jobs:
           sed -i 's/if(EEPROM.read(400) == 1)/if(true)/g' WifiXv1.5/WifiXv1.5.ino
           find WifiXv1.5 -maxdepth 1 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/WifiX 1.5/dev : GMpro87/g' {} +
 
-      - name: Final Compile
+      - name: Final Compilation
         run: |
-          # Tambahkan include path ke SimpleButton kustom agar tidak missing
+          # Gunakan flag -I untuk SimpleButton agar tidak 'No such file'
           arduino-cli compile --fqbn deauther:esp8266:d1_mini:eesz=4M3M \
           --build-property "build.extra_flags=-I./WifiXv1.5/src/SimpleButton" \
           ./WifiXv1.5 --output-dir ./build
@@ -63,5 +65,5 @@ jobs:
       - name: Upload Binary
         uses: actions/upload-artifact@v4
         with:
-          name: GMpro87-Final-Bin
+          name: GMpro87-Victory-Bin
           path: ./build/*.bin
