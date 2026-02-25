@@ -25,38 +25,35 @@ jobs:
           arduino-cli lib install "ArduinoJson"@5.13.5
           arduino-cli lib install "Adafruit NeoPixel"
 
-      - name: Surgical Cleaning & Fix
+      - name: Surgical Fix & Rebranding
         run: |
-          # 1. SETUP FOLDER PROJECT
+          # 1. BUAT STRUKTUR FOLDER STANDAR ARDUINO
           mkdir -p WifiXv1.5
           cp -r ./* WifiXv1.5/ 2>/dev/null || true
-
-          # 2. BUANG LIBRARY DOUBLE (SUMBER MASALAH)
-          # Kita hapus folder Adafruit_NeoPixel yang ada di dalam src biar gak tabrakan
+          
+          # 2. BERSIHKAN LIBRARY INTERNAL YANG BIKIN KONFLIK
           rm -rf WifiXv1.5/src/Adafruit_NeoPixel*
+          rm -rf WifiXv1.5/src/ArduinoJson*
 
-          # 3. FIX ARDUINOJSON & LED.CPP
-          # Bersihkan path include yang salah
-          find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's|src/ArduinoJson-v5.13.5/||g' {} +
+          # 3. FIX LED.CPP (SUNTIK EXTERN SECARA BRUTAL)
+          # Kita paksa led.cpp ngenalin 'strip' yang didefinisikan di WifiXv1.5.ino
+          sed -i 's/#include "src\/Adafruit_NeoPixel-1.7.0\/Adafruit_NeoPixel.h"/#include <Adafruit_NeoPixel.h>/g' WifiXv1.5/led.cpp
+          sed -i 's/#include "Adafruit_NeoPixel.h"/#include <Adafruit_NeoPixel.h>/g' WifiXv1.5/led.cpp
           
-          # Paksa led.cpp ngenalin variabel 'strip' dari file utama
-          if [ -f "WifiXv1.5/led.cpp" ]; then
-            sed -i 's/#include "src\/Adafruit_NeoPixel-1.7.0\/Adafruit_NeoPixel.h"/#include <Adafruit_NeoPixel.h>/g' WifiXv1.5/led.cpp
-            sed -i 's/#include "Adafruit_NeoPixel.h"/#include <Adafruit_NeoPixel.h>/g' WifiXv1.5/led.cpp
-            # Suntik 'extern' supaya dia nyari variabel 'strip' di file utama
-            sed -i '1i #include <Adafruit_NeoPixel.h>\nextern Adafruit_NeoPixel strip;' WifiXv1.5/led.cpp
-          fi
+          # Tambahkan deklarasi extern tepat di bawah include
+          sed -i '/#include <Adafruit_NeoPixel.h>/a extern Adafruit_NeoPixel strip;' WifiXv1.5/led.cpp
 
-          # 4. BYPASS & REBRANDING
+          # 4. FIX INCLUDE PATH DI FILE UTAMA
+          sed -i 's|src/ArduinoJson-v5.13.5/||g' WifiXv1.5/WifiXv1.5.ino
+          sed -i 's|src/Adafruit_NeoPixel-1.7.0/||g' WifiXv1.5/WifiXv1.5.ino
+
+          # 5. UNLOCK & REBRAND
           sed -i 's/if(EEPROM.read(400) == 1)/if(true)/g' WifiXv1.5/WifiXv1.5.ino
-          sed -i 's/return loop();//g' WifiXv1.5/WifiXv1.5.ino
-          
           find WifiXv1.5 -maxdepth 1 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/WifiX 1.5/dev : GMpro87/g' {} +
-          find WifiXv1.5 -maxdepth 1 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/asp29/dev : GMpro87/g' {} +
 
       - name: Compile Firmware
         run: |
-          # Jalankan kompilasi bersih
+          # Kompilasi dari folder yang sudah kita rapikan
           arduino-cli compile --fqbn deauther:esp8266:d1_mini:eesz=4M3M \
           ./WifiXv1.5 --output-dir ./build
 
