@@ -25,42 +25,44 @@ jobs:
           arduino-cli lib install "ArduinoJson"@5.13.5
           arduino-cli lib install "Adafruit NeoPixel"
 
-      - name: Ultimate Rebranding & Surgical Fix
+      - name: Ultimate Rebranding & Folder Fix
         run: |
-          # 1. FIX LIBRARY PATH
-          # Copy library langsung ke folder saat ini (PWD)
-          cp /home/runner/Arduino/libraries/Adafruit_NeoPixel/*.h ./
-          cp /home/runner/Arduino/libraries/Adafruit_NeoPixel/*.cpp ./
+          # 1. BUAT STRUKTUR FOLDER YANG BENAR (WAJIB ARDUINO)
+          # File WifiXv1.5.ino HARUS di dalam folder WifiXv1.5
+          mkdir -p WifiXv1.5
           
-          # Paksa led.cpp buat pake library lokal
-          if [ -f "led.cpp" ]; then
-            sed -i 's/#include <Adafruit_NeoPixel.h>/#include "Adafruit_NeoPixel.h"/g' led.cpp
+          # Pindahkan semua file ke folder tersebut
+          cp -r ./* WifiXv1.5/ 2>/dev/null || true
+
+          # 2. FIX LIBRARY PATH
+          # Copy library ke dalam folder project agar led.cpp bisa akses
+          cp /home/runner/Arduino/libraries/Adafruit_NeoPixel/*.h WifiXv1.5/
+          cp /home/runner/Arduino/libraries/Adafruit_NeoPixel/*.cpp WifiXv1.5/
+          
+          # Paksa led.cpp pake file lokal
+          if [ -f "WifiXv1.5/led.cpp" ]; then
+            sed -i 's/#include <Adafruit_NeoPixel.h>/#include "Adafruit_NeoPixel.h"/g' WifiXv1.5/led.cpp
           fi
 
-          # 2. BYPASS AKTIVASI & REBRAND
-          # Pakai wildcard (*.ino) biar gak salah path lagi
-          sed -i 's/if(EEPROM.read(400) == 1)/if(true)/g' *.ino
-          sed -i 's/return loop();//g' *.ino
+          # 3. BYPASS AKTIVASI & REBRAND (Langsung di folder baru)
+          sed -i 's/if(EEPROM.read(400) == 1)/if(true)/g' WifiXv1.5/WifiXv1.5.ino
+          sed -i 's/return loop();//g' WifiXv1.5/WifiXv1.5.ino
           
-          find . -maxdepth 1 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/WifiX 1.5/dev : GMpro87/g' {} +
-          find . -maxdepth 1 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/asp29/dev : GMpro87/g' {} +
+          find WifiXv1.5 -maxdepth 1 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/WifiX 1.5/dev : GMpro87/g' {} +
+          find WifiXv1.5 -maxdepth 1 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/asp29/dev : GMpro87/g' {} +
           
           # Config Adjustment
-          if [ -f "A_config.h" ]; then
-            sed -i 's/#define AP_SSID "#WifiX.1.5#"/#define AP_SSID "Vivo1904"/g' A_config.h
-            sed -i 's/#define AP_PASSWD "deauther"/#define AP_PASSWD "Sangkur87"/g' A_config.h
-            sed -i '/#elif defined(NODEMCU)/,/#elif/ s/SH1106_I2C/SSD1306_I2C/g' A_config.h
+          if [ -f "WifiXv1.5/A_config.h" ]; then
+            sed -i 's/#define AP_SSID "#WifiX.1.5#"/#define AP_SSID "Vivo1904"/g' WifiXv1.5/A_config.h
+            sed -i 's/#define AP_PASSWD "deauther"/#define AP_PASSWD "Sangkur87"/g' WifiXv1.5/A_config.h
+            sed -i '/#elif defined(NODEMCU)/,/#elif/ s/SH1106_I2C/SSD1306_I2C/g' WifiXv1.5/A_config.h
           fi
 
       - name: Compile Firmware
         run: |
-          # Dapatkan path absolut file .ino untuk menghindari error "Can't open sketch"
-          SKETCH_PATH=$(realpath WifiXv1.5.ino)
-          echo "Compiling sketch at: $SKETCH_PATH"
-          
+          # Compile foldernya, bukan filenya
           arduino-cli compile --fqbn deauther:esp8266:d1_mini:eesz=4M3M \
-          --libraries /home/runner/Arduino/libraries \
-          "$SKETCH_PATH" --output-dir ./build
+          ./WifiXv1.5 --output-dir ./build
 
       - name: Upload Binary
         uses: actions/upload-artifact@v4
