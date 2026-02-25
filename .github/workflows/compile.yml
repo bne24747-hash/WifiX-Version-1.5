@@ -1,4 +1,4 @@
-name: GMpro87-Final-Unlocked
+name: GMpro87-Ultimate-Fix
 
 on: 
   push:
@@ -14,51 +14,53 @@ jobs:
       - name: Setup Arduino CLI
         uses: arduino/setup-arduino-cli@v1
 
-      - name: Install Spacehuhn Deauther SDK
+      - name: Install Deauther Core
         run: |
           arduino-cli core update-index --additional-urls https://raw.githubusercontent.com/SpacehuhnTech/arduino/main/package_spacehuhn_index.json
           arduino-cli core install deauther:esp8266 --additional-urls https://raw.githubusercontent.com/SpacehuhnTech/arduino/main/package_spacehuhn_index.json
 
-      - name: Install Libraries
+      - name: Force Install Clean Libraries
         run: |
           arduino-cli lib install "SimpleCLI"
           arduino-cli lib install "ArduinoJson"@5.13.5
           arduino-cli lib install "Adafruit NeoPixel"
 
-      - name: Surgical Fix & Rebranding
+      - name: Surgical Fix (The Destroyer)
         run: |
-          # 1. BUAT STRUKTUR FOLDER STANDAR ARDUINO
+          # 1. Bikin folder project yang bener
           mkdir -p WifiXv1.5
           cp -r ./* WifiXv1.5/ 2>/dev/null || true
           
-          # 2. BERSIHKAN LIBRARY INTERNAL YANG BIKIN KONFLIK
+          # 2. HAPUS SEMUA LIBRARY INTERNAL (Biarkan CLI yang handle)
+          # Ini buat fix error "No such file or directory"
           rm -rf WifiXv1.5/src/Adafruit_NeoPixel*
           rm -rf WifiXv1.5/src/ArduinoJson*
+          rm -rf WifiXv1.5/src/examples # Hapus contoh yang bikin error BLEPeripheral
 
-          # 3. FIX LED.CPP (SUNTIK EXTERN SECARA BRUTAL)
-          # Kita paksa led.cpp ngenalin 'strip' yang didefinisikan di WifiXv1.5.ino
-          sed -i 's/#include "src\/Adafruit_NeoPixel-1.7.0\/Adafruit_NeoPixel.h"/#include <Adafruit_NeoPixel.h>/g' WifiXv1.5/led.cpp
-          sed -i 's/#include "Adafruit_NeoPixel.h"/#include <Adafruit_NeoPixel.h>/g' WifiXv1.5/led.cpp
-          
-          # Tambahkan deklarasi extern tepat di bawah include
+          # 3. FIX INCLUDE PATH DI SEMUA FILE
+          # Kita ubah #include "src/.../File.h" jadi #include <File.h> secara massal
+          find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.cpp" -o -name "*.h" \) -exec sed -i 's|src/ArduinoJson-v5.13.5/||g' {} +
+          find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.cpp" -o -name "*.h" \) -exec sed -i 's|src/Adafruit_NeoPixel-1.7.0/||g' {} +
+          find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.cpp" -o -name "*.h" \) -exec sed -i 's|"ArduinoJson.h"|<ArduinoJson.h>|g' {} +
+          find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.cpp" -o -name "*.h" \) -exec sed -i 's|"Adafruit_NeoPixel.h"|<Adafruit_NeoPixel.h>|g' {} +
+
+          # 4. FIX "UNDEFINED REFERENCE TO STRIP"
+          # Paksa led.cpp ngenalin 'strip' sebagai variabel luar (extern)
           sed -i '/#include <Adafruit_NeoPixel.h>/a extern Adafruit_NeoPixel strip;' WifiXv1.5/led.cpp
+          # Kalau include-nya pake tanda kutip
+          sed -i '/#include "led.h"/a extern Adafruit_NeoPixel strip;' WifiXv1.5/led.cpp
 
-          # 4. FIX INCLUDE PATH DI FILE UTAMA
-          sed -i 's|src/ArduinoJson-v5.13.5/||g' WifiXv1.5/WifiXv1.5.ino
-          sed -i 's|src/Adafruit_NeoPixel-1.7.0/||g' WifiXv1.5/WifiXv1.5.ino
-
-          # 5. UNLOCK & REBRAND
+          # 5. REBRANDING & UNLOCK
           sed -i 's/if(EEPROM.read(400) == 1)/if(true)/g' WifiXv1.5/WifiXv1.5.ino
           find WifiXv1.5 -maxdepth 1 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/WifiX 1.5/dev : GMpro87/g' {} +
 
       - name: Compile Firmware
         run: |
-          # Kompilasi dari folder yang sudah kita rapikan
           arduino-cli compile --fqbn deauther:esp8266:d1_mini:eesz=4M3M \
           ./WifiXv1.5 --output-dir ./build
 
       - name: Upload Binary
         uses: actions/upload-artifact@v4
         with:
-          name: GMpro87-Final-Bin
+          name: GMpro87-Fixed-Firmware
           path: ./build/*.bin
