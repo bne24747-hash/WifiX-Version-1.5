@@ -25,23 +25,22 @@ jobs:
           arduino-cli lib install "ArduinoJson"@5.13.5
           arduino-cli lib install "Adafruit NeoPixel"
 
-      - name: Ultimate Surgical Fix
+      - name: Brutal Fix for led.cpp & strip
         run: |
-          # 1. BUAT FOLDER PROJECT STANDAR
+          # 1. SETUP FOLDER PROJECT
           mkdir -p WifiXv1.5
           cp -r ./* WifiXv1.5/ 2>/dev/null || true
 
-          # 2. FIX ARDUINOJSON PATH (Biarr gak error 'No such file')
-          # Kita paksa ganti path ribet ke include standar
+          # 2. FIX ARDUINOJSON PATH
           find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's|src/ArduinoJson-v5.13.5/||g' {} +
 
-          # 3. FIX led.cpp & strip ERROR
-          # Copy library langsung ke folder project
-          cp /home/runner/Arduino/libraries/Adafruit_NeoPixel/*.h WifiXv1.5/
-          cp /home/runner/Arduino/libraries/Adafruit_NeoPixel/*.cpp WifiXv1.5/
-          
+          # 3. BRUTAL INJECTION UNTUK led.cpp
+          # Kita masukin definisi 'strip' langsung ke led.cpp biar dia gak nanya lagi
           if [ -f "WifiXv1.5/led.cpp" ]; then
-            sed -i 's/#include <Adafruit_NeoPixel.h>/#include "Adafruit_NeoPixel.h"/g' WifiXv1.5/led.cpp
+            # Hapus include lama
+            sed -i '/#include <Adafruit_NeoPixel.h>/d' WifiXv1.5/led.cpp
+            # Suntik header dan deklarasi eksternal di paling atas file
+            sed -i '1i #include <Adafruit_NeoPixel.h>\nextern Adafruit_NeoPixel strip;' WifiXv1.5/led.cpp
           fi
 
           # 4. BYPASS & REBRANDING
@@ -53,7 +52,7 @@ jobs:
 
       - name: Compile Firmware
         run: |
-          # Compile pake semua library yang tersedia
+          # Compile dengan flag library absolut
           arduino-cli compile --fqbn deauther:esp8266:d1_mini:eesz=4M3M \
           --libraries /home/runner/Arduino/libraries \
           ./WifiXv1.5 --output-dir ./build
