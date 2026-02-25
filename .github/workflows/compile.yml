@@ -21,6 +21,7 @@ jobs:
 
       - name: Install Libraries
         run: |
+          # Pakai --user biar library masuk ke folder yang gampang dicari compiler
           arduino-cli lib install "SimpleCLI"
           arduino-cli lib install "ArduinoJson"@5.13.5
           arduino-cli lib install "Adafruit NeoPixel"
@@ -28,11 +29,9 @@ jobs:
       - name: Ultimate Rebranding GMpro87
         run: |
           mkdir -p WifiXv1.5
-          # Copy semua file ke folder project baru
           find . -maxdepth 1 -not -name 'WifiXv1.5' -not -name '.' -exec cp -r {} WifiXv1.5/ \;
 
           # 1. BYPASS AKTIVASI (Force True)
-          # Mengganti pengecekan EEPROM agar selalu dianggap sudah aktif
           sed -i 's/if(EEPROM.read(400) == 1)/if(true)/g' WifiXv1.5/WifiXv1.5.ino
           sed -i 's/return loop();//g' WifiXv1.5/WifiXv1.5.ino
 
@@ -47,15 +46,15 @@ jobs:
           sed -i 's/displayUI.drawIntro/#define NO_INTRO/g' WifiXv1.5/WifiXv1.5.ino
 
           # 4. WIFI & OLED CONFIG
-          # Pastikan SSID dan Password sesuai keinginan lo
           sed -i 's/#define AP_SSID "#WifiX.1.5#"/#define AP_SSID "Vivo1904"/g' WifiXv1.5/A_config.h
           sed -i 's/#define AP_PASSWD "deauther"/#define AP_PASSWD "Sangkur87"/g' WifiXv1.5/A_config.h
           sed -i '/#elif defined(NODEMCU)/,/#elif/ s/SH1106_I2C/SSD1306_I2C/g' WifiXv1.5/A_config.h
 
       - name: Compile Firmware
         run: |
-          # Gunakan konfigurasi D1 Mini dengan 4MB Flash
+          # Kita tambahkan flag --libraries secara eksplisit ke folder runner github
           arduino-cli compile --fqbn deauther:esp8266:d1_mini:eesz=4M3M \
+          --libraries /home/runner/Arduino/libraries \
           ./WifiXv1.5/WifiXv1.5.ino --output-dir ./build
 
       - name: Upload Binary
