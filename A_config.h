@@ -16,7 +16,7 @@
 
 // Reset settings wajib aktif buat flash pertama biar config lama ilang
 #define RESET_SETTINGS 
-// Jangan aktifkan FORMAT_EEPROM di sini karena fungsi format di .ino lo lagi error argumen
+// Jangan aktifkan FORMAT_EEPROM karena fungsi format di .ino lo minta 2 argumen
 // #define FORMAT_EEPROM 
 
 #if defined(WEMOS_D1_MINI)
@@ -71,8 +71,9 @@
 #define AP_PASSWD "deauther"
 #define AP_HIDDEN false
 
-// FIX ERROR 'WEB_IP_ADDR': Gunakan format IPAddress yang benar
-#define WEB_IP_ADDR IPAddress(192, 168, 4, 1)
+// FIX FORMAT IP ADDRESS
+#define AP_IP_ADDR {192, 168, 4, 1}
+#define WEB_IP_ADDR 192, 168, 4, 1
 
 #define WEB_ENABLED true
 #define WEB_CAPTIVE_PORTAL false
