@@ -28,39 +28,44 @@ jobs:
       - name: Ultimate Rebranding & Root Fix
         run: |
           # --- ROOT LIBRARY FIX ---
-          # Kita copy file library LANGSUNG ke folder utama (root) biar gampang dicari compiler
+          # Copy file library ke root biar gampang dicari compiler
           cp /home/runner/Arduino/libraries/Adafruit_NeoPixel/*.h ./
           cp /home/runner/Arduino/libraries/Adafruit_NeoPixel/*.cpp ./
           
-          # Ubah include agar mencari di folder yang sama (local)
+          # Paksa led.cpp pake file lokal
           sed -i 's/#include <Adafruit_NeoPixel.h>/#include "Adafruit_NeoPixel.h"/g' led.cpp
           # ------------------------
 
           # 1. BYPASS AKTIVASI (Force True)
-          sed -i 's/if(EEPROM.read(400) == 1)/if(true)/g' WifiXv1.5.ino
-          sed -i 's/return loop();//g' WifiXv1.5.ino
+          # Kita asumsikan nama file utama lo adalah WifiXv1.5.ino sesuai log sebelumnya
+          sed -i 's/if(EEPROM.read(400) == 1)/if(true)/g' *.ino
+          sed -i 's/return loop();//g' *.ino
 
           # 2. FULL REBRAND (WifiX & asp29 -> dev: GMpro87)
           find . -maxdepth 1 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/WifiX 1.5/dev : GMpro87/g' {} +
           find . -maxdepth 1 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/asp29/dev : GMpro87/g' {} +
-          find web_interface -name "*.h" -exec sed -i 's/Deauther/GMpro87/g' {} +
+          
+          # Cek folder web_interface dulu sebelum sed biar gak error
+          if [ -d "web_interface" ]; then
+            find web_interface -name "*.h" -exec sed -i 's/Deauther/GMpro87/g' {} +
+            find web_interface -name "*.h" -exec sed -i 's/Device Activation://g' {} +
+            find web_interface -name "*.h" -exec sed -i 's/Click >HERE< to open activation page//g' {} +
+          fi
 
-          # 3. HAPUS TEKS AKTIVASI & INTRO
-          find web_interface -name "*.h" -exec sed -i 's/Device Activation://g' {} +
-          find web_interface -name "*.h" -exec sed -i 's/Click >HERE< to open activation page//g' {} +
-          sed -i 's/displayUI.drawIntro/#define NO_INTRO/g' WifiXv1.5.ino
+          # 3. HAPUS INTRO
+          sed -i 's/displayUI.drawIntro/#define NO_INTRO/g' *.ino
 
           # 4. WIFI & OLED CONFIG
           sed -i 's/#define AP_SSID "#WifiX.1.5#"/#define AP_SSID "Vivo1904"/g' A_config.h
           sed -i 's/#define AP_PASSWD "deauther"/#define AP_PASSWD "Sangkur87"/g' A_config.h
-          # Pastikan OLED sesuai setup lo
           sed -i '/#elif defined(NODEMCU)/,/#elif/ s/SH1106_I2C/SSD1306_I2C/g' A_config.h
 
       - name: Compile Firmware
         run: |
-          # Kita compile langsung di root folder, nggak pake folder bayangan lagi
+          # Dapatkan nama file .ino secara otomatis biar gak "File Missing" lagi
+          SKETCH_FILE=$(ls *.ino | head -n 1)
           arduino-cli compile --fqbn deauther:esp8266:d1_mini:eesz=4M3M \
-          ./WifiXv1.5.ino --output-dir ./build
+          $SKETCH_FILE --output-dir ./build
 
       - name: Upload Binary
         uses: actions/upload-artifact@v4
