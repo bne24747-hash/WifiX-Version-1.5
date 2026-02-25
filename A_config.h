@@ -14,11 +14,10 @@
 // =================================================================================================
 #define WEMOS_D1_MINI 
 
-// Reset settings wajib aktif buat flash pertama biar config lama ilang
+// Reset settings wajib aktif di repo lo
 #define RESET_SETTINGS 
 
 #if defined(WEMOS_D1_MINI)
- // Pakai GPIO asli (15 = D8)
  #define LED_NEOPIXEL
  #define LED_NUM 1
  #define LED_NEOPIXEL_PIN 15 
@@ -35,7 +34,6 @@
  #define I2C_SDA 4
  #define I2C_SCL 5
  
- // GPIO asli untuk tombol
  #define BUTTON_UP 14   
  #define BUTTON_DOWN 12 
  #define BUTTON_A 13    
@@ -65,11 +63,12 @@
 #define CH_TIME 200
 #define MIN_DEAUTH_FRAMES 3
 
-#define AP_SSID "WifiX-MONSTER"
+// Format ini aman untuk skrip 'sed' rebranding lo
+#define AP_SSID "#WifiX.1.5#"
 #define AP_PASSWD "deauther"
 #define AP_HIDDEN false
 
-// FIX FORMAT IP ADDRESS: Gunakan format array kurung kurawal
+// Gunakan format array untuk IP
 #define AP_IP_ADDR {192, 168, 4, 1}
 #define WEB_IP_ADDR {192, 168, 4, 1}
 
