@@ -25,21 +25,25 @@ jobs:
           arduino-cli lib install "ArduinoJson"@5.13.5
           arduino-cli lib install "Adafruit NeoPixel"
 
-      - name: Brutal Fix for led.cpp & strip
+      - name: Surgical Cleaning & Fix
         run: |
           # 1. SETUP FOLDER PROJECT
           mkdir -p WifiXv1.5
           cp -r ./* WifiXv1.5/ 2>/dev/null || true
 
-          # 2. FIX ARDUINOJSON PATH
-          find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's|src/ArduinoJson-v5.13.5/||g' {} +
+          # 2. BUANG LIBRARY DOUBLE (SUMBER MASALAH)
+          # Kita hapus folder Adafruit_NeoPixel yang ada di dalam src biar gak tabrakan
+          rm -rf WifiXv1.5/src/Adafruit_NeoPixel*
 
-          # 3. BRUTAL INJECTION UNTUK led.cpp
-          # Kita masukin definisi 'strip' langsung ke led.cpp biar dia gak nanya lagi
+          # 3. FIX ARDUINOJSON & LED.CPP
+          # Bersihkan path include yang salah
+          find WifiXv1.5 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's|src/ArduinoJson-v5.13.5/||g' {} +
+          
+          # Paksa led.cpp ngenalin variabel 'strip' dari file utama
           if [ -f "WifiXv1.5/led.cpp" ]; then
-            # Hapus include lama
-            sed -i '/#include <Adafruit_NeoPixel.h>/d' WifiXv1.5/led.cpp
-            # Suntik header dan deklarasi eksternal di paling atas file
+            sed -i 's/#include "src\/Adafruit_NeoPixel-1.7.0\/Adafruit_NeoPixel.h"/#include <Adafruit_NeoPixel.h>/g' WifiXv1.5/led.cpp
+            sed -i 's/#include "Adafruit_NeoPixel.h"/#include <Adafruit_NeoPixel.h>/g' WifiXv1.5/led.cpp
+            # Suntik 'extern' supaya dia nyari variabel 'strip' di file utama
             sed -i '1i #include <Adafruit_NeoPixel.h>\nextern Adafruit_NeoPixel strip;' WifiXv1.5/led.cpp
           fi
 
@@ -52,9 +56,8 @@ jobs:
 
       - name: Compile Firmware
         run: |
-          # Compile dengan flag library absolut
+          # Jalankan kompilasi bersih
           arduino-cli compile --fqbn deauther:esp8266:d1_mini:eesz=4M3M \
-          --libraries /home/runner/Arduino/libraries \
           ./WifiXv1.5 --output-dir ./build
 
       - name: Upload Binary
