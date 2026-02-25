@@ -25,21 +25,21 @@ jobs:
           arduino-cli lib install "ArduinoJson"@5.13.5
           arduino-cli lib install "Adafruit NeoPixel"
 
-      - name: Ultimate Rebranding & Library Force-Fix
+      - name: Ultimate Rebranding & Surgical Library Fix
         run: |
           mkdir -p WifiXv1.5
-          # Copy source code
+          # Copy source code ke folder project
           find . -maxdepth 1 -not -name 'WifiXv1.5' -not -name '.' -exec cp -r {} WifiXv1.5/ \;
 
-          # --- FORCE FIX LIBRARY (PENTING!) ---
-          # Kita copy manual file library dari folder Arduino ke folder project kita
-          # Ini buat nge-fix error 'strip' was not declared
+          # --- SURGICAL FIX LIBRARY (PENTING!) ---
+          # Kita cuma copy file HEADER dan CPP, buang folder examples yang bikin error
           mkdir -p WifiXv1.5/src
-          cp -r /home/runner/Arduino/libraries/Adafruit_NeoPixel/* WifiXv1.5/src/
+          cp /home/runner/Arduino/libraries/Adafruit_NeoPixel/*.h WifiXv1.5/src/
+          cp /home/runner/Arduino/libraries/Adafruit_NeoPixel/*.cpp WifiXv1.5/src/
           
-          # Paksa led.cpp buat pake library yang udah kita copy manual
+          # Paksa led.cpp buat pake library lokal di folder src
           sed -i 's/#include <Adafruit_NeoPixel.h>/#include "src\/Adafruit_NeoPixel.h"/g' WifiXv1.5/led.cpp
-          # ------------------------------------
+          # ---------------------------------------
 
           # 1. BYPASS AKTIVASI (Force True)
           sed -i 's/if(EEPROM.read(400) == 1)/if(true)/g' WifiXv1.5/WifiXv1.5.ino
@@ -62,7 +62,7 @@ jobs:
 
       - name: Compile Firmware
         run: |
-          # Compile pake folder yang udah di-rebrand dan di-fix library-nya
+          # Compile menggunakan folder yang sudah bersih dari folder examples beracun
           arduino-cli compile --fqbn deauther:esp8266:d1_mini:eesz=4M3M \
           ./WifiXv1.5/WifiXv1.5.ino --output-dir ./build
 
