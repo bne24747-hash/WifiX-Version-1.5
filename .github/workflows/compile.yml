@@ -27,25 +27,26 @@ jobs:
 
       - name: Ultimate Rebranding & Root Fix
         run: |
+          # Bersihkan folder sisa biar gak pusing
+          rm -rf WifiXv1.5/ 
+
           # --- ROOT LIBRARY FIX ---
-          # Copy file library ke root biar gampang dicari compiler
+          # Copy file library ke root folder tempat WifiXv1.5.ino berada
           cp /home/runner/Arduino/libraries/Adafruit_NeoPixel/*.h ./
           cp /home/runner/Arduino/libraries/Adafruit_NeoPixel/*.cpp ./
           
-          # Paksa led.cpp pake file lokal
+          # Paksa led.cpp pake file lokal agar variabel 'strip' terbaca
           sed -i 's/#include <Adafruit_NeoPixel.h>/#include "Adafruit_NeoPixel.h"/g' led.cpp
           # ------------------------
 
           # 1. BYPASS AKTIVASI (Force True)
-          # Kita asumsikan nama file utama lo adalah WifiXv1.5.ino sesuai log sebelumnya
-          sed -i 's/if(EEPROM.read(400) == 1)/if(true)/g' *.ino
-          sed -i 's/return loop();//g' *.ino
+          sed -i 's/if(EEPROM.read(400) == 1)/if(true)/g' WifiXv1.5.ino
+          sed -i 's/return loop();//g' WifiXv1.5.ino
 
           # 2. FULL REBRAND (WifiX & asp29 -> dev: GMpro87)
           find . -maxdepth 1 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/WifiX 1.5/dev : GMpro87/g' {} +
           find . -maxdepth 1 -type f \( -name "*.ino" -o -name "*.h" -o -name "*.cpp" \) -exec sed -i 's/asp29/dev : GMpro87/g' {} +
           
-          # Cek folder web_interface dulu sebelum sed biar gak error
           if [ -d "web_interface" ]; then
             find web_interface -name "*.h" -exec sed -i 's/Deauther/GMpro87/g' {} +
             find web_interface -name "*.h" -exec sed -i 's/Device Activation://g' {} +
@@ -53,7 +54,7 @@ jobs:
           fi
 
           # 3. HAPUS INTRO
-          sed -i 's/displayUI.drawIntro/#define NO_INTRO/g' *.ino
+          sed -i 's/displayUI.drawIntro/#define NO_INTRO/g' WifiXv1.5.ino
 
           # 4. WIFI & OLED CONFIG
           sed -i 's/#define AP_SSID "#WifiX.1.5#"/#define AP_SSID "Vivo1904"/g' A_config.h
@@ -62,10 +63,9 @@ jobs:
 
       - name: Compile Firmware
         run: |
-          # Dapatkan nama file .ino secara otomatis biar gak "File Missing" lagi
-          SKETCH_FILE=$(ls *.ino | head -n 1)
+          # Langsung hajar file .ino di root
           arduino-cli compile --fqbn deauther:esp8266:d1_mini:eesz=4M3M \
-          $SKETCH_FILE --output-dir ./build
+          ./WifiXv1.5.ino --output-dir ./build
 
       - name: Upload Binary
         uses: actions/upload-artifact@v4
